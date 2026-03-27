@@ -3,7 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 
 import { initDb } from './db';
 import identifyRouter from './routes/identify';
@@ -24,7 +24,7 @@ app.use('/api/workouts', workoutsRouter);
 app.use('/api/generate', generateRouter);
 
 // Serve built client in production
-const clientDist = path.join(__dirname, '..', 'client', 'dist');
+const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');
 app.use(express.static(clientDist));
 app.get('*', (_req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
