@@ -16,52 +16,48 @@ export async function initDb(): Promise<Database> {
     db = new SQL.Database();
   }
 
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
+  db.run(`CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
 
-  db.run(`
-    CREATE TABLE IF NOT EXISTS workouts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER REFERENCES users(id),
-      started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      ended_at DATETIME,
-      notes TEXT
-    );
+  db.run(`CREATE TABLE IF NOT EXISTS workouts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id),
+    started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ended_at DATETIME,
+    notes TEXT
+  )`);
 
-    CREATE TABLE IF NOT EXISTS exercises (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      workout_id INTEGER REFERENCES workouts(id),
-      machine_name TEXT NOT NULL,
-      muscles TEXT,
-      image_data TEXT,
-      position INTEGER
-    );
+  db.run(`CREATE TABLE IF NOT EXISTS exercises (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workout_id INTEGER REFERENCES workouts(id),
+    machine_name TEXT NOT NULL,
+    muscles TEXT,
+    image_data TEXT,
+    position INTEGER
+  )`);
 
-    CREATE TABLE IF NOT EXISTS sets (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      exercise_id INTEGER REFERENCES exercises(id),
-      set_number INTEGER,
-      weight REAL,
-      weight_unit TEXT DEFAULT 'kg',
-      reps INTEGER,
-      rpe INTEGER,
-      completed_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+  db.run(`CREATE TABLE IF NOT EXISTS sets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    exercise_id INTEGER REFERENCES exercises(id),
+    set_number INTEGER,
+    weight REAL,
+    weight_unit TEXT DEFAULT 'kg',
+    reps INTEGER,
+    rpe INTEGER,
+    completed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
 
-    CREATE TABLE IF NOT EXISTS saved_workouts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER REFERENCES users(id),
-      name TEXT NOT NULL,
-      workout_data TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
+  db.run(`CREATE TABLE IF NOT EXISTS saved_workouts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id),
+    name TEXT NOT NULL,
+    workout_data TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
 
   // Migrations: add user_id to tables that may exist without it
   try { db.run('ALTER TABLE workouts ADD COLUMN user_id INTEGER REFERENCES users(id)'); } catch { /* already exists */ }
