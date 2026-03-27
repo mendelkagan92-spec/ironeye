@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getWorkouts } from '../api';
-import type { Workout } from '../types';
+import type { Workout, User } from '../types';
 
 interface Stats {
   totalWorkouts: number;
@@ -85,7 +85,12 @@ function formatDuration(min: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-export default function ProfilePage() {
+interface Props {
+  user: User;
+  onLogout: () => void;
+}
+
+export default function ProfilePage({ user, onLogout }: Props) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -117,14 +122,24 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
-          <span className="font-barlow text-2xl font-black text-amber-500">IE</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+            <span className="font-barlow text-2xl font-black text-amber-500">
+              {user.email[0].toUpperCase()}
+            </span>
+          </div>
+          <div>
+            <h1 className="font-barlow text-3xl font-black text-text-primary">My Stats</h1>
+            <p className="text-text-muted text-sm">{user.email}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="font-barlow text-3xl font-black text-text-primary">My Stats</h1>
-          <p className="text-text-muted text-sm">All-time performance</p>
-        </div>
+        <button
+          onClick={onLogout}
+          className="text-text-muted text-sm hover:text-red-400 transition-colors px-3 py-1.5 rounded-lg border border-surface-3 hover:border-red-400/30"
+        >
+          Log out
+        </button>
       </div>
 
       {/* Stats grid */}

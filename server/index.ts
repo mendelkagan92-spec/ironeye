@@ -6,6 +6,8 @@ import dotenv from 'dotenv';
 dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 
 import { initDb } from './db';
+import { requireAuth } from './middleware/auth';
+import authRouter from './routes/auth';
 import identifyRouter from './routes/identify';
 import workoutsRouter from './routes/workouts';
 import generateRouter from './routes/generate';
@@ -18,10 +20,13 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// API Routes
-app.use('/api/identify', identifyRouter);
-app.use('/api/workouts', workoutsRouter);
-app.use('/api/generate', generateRouter);
+// Auth routes (public)
+app.use('/api/auth', authRouter);
+
+// Protected API routes
+app.use('/api/identify', requireAuth, identifyRouter);
+app.use('/api/workouts', requireAuth, workoutsRouter);
+app.use('/api/generate', requireAuth, generateRouter);
 
 // Serve built client in production
 const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');

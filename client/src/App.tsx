@@ -4,18 +4,49 @@ import WorkoutPage from './pages/WorkoutPage';
 import HistoryPage from './pages/HistoryPage';
 import ProfilePage from './pages/ProfilePage';
 import GeneratePage from './pages/GeneratePage';
-import type { TabName, GeneratedWorkout } from './types';
+import AuthPage from './pages/AuthPage';
+import { getToken, clearToken } from './api';
+import type { TabName, GeneratedWorkout, User } from './types';
+
+function getStoredUser(): User | null {
+  try {
+    const raw = localStorage.getItem('ironeye_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function App() {
+  const [user, setUser] = useState<User | null>(() => {
+    // Only restore user if a token also exists
+    return getToken() ? getStoredUser() : null;
+  });
   const [activeTab, setActiveTab] = useState<TabName>('workout');
   const [pendingGeneratedWorkout, setPendingGeneratedWorkout] = useState<GeneratedWorkout | null>(null);
 
   const hasActiveWorkout = !!localStorage.getItem('ironeye_active_workout');
 
+  function handleAuth(u: User) {
+    localStorage.setItem('ironeye_user', JSON.stringify(u));
+    setUser(u);
+  }
+
+  function handleLogout() {
+    clearToken();
+    localStorage.removeItem('ironeye_user');
+    setUser(null);
+    setActiveTab('workout');
+  }
+
   const handleStartGeneratedWorkout = (workout: GeneratedWorkout) => {
     setPendingGeneratedWorkout(workout);
     setActiveTab('workout');
   };
+
+  if (!user) {
+    return <AuthPage onAuth={handleAuth} />;
+  }
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -50,7 +81,7 @@ export default function App() {
           {activeTab === 'history' && (
             <HistoryPage onStartSavedWorkout={(w) => { setPendingGeneratedWorkout(w); setActiveTab('workout'); }} />
           )}
-          {activeTab === 'profile' && <ProfilePage />}
+          {activeTab === 'profile' && <ProfilePage user={user} onLogout={handleLogout} />}
         </div>
       </main>
 
