@@ -16,12 +16,18 @@ export async function initDb(): Promise<Database> {
     db = new SQL.Database();
   }
 
+  console.log('Creating tables...');
+
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
+  // Verify users table exists
+  const tables = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='users'");
+  console.log('Users table check:', tables.length > 0 && tables[0].values.length > 0 ? 'EXISTS' : 'MISSING');
 
   db.run(`CREATE TABLE IF NOT EXISTS workouts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,6 +68,10 @@ export async function initDb(): Promise<Database> {
   // Migrations: add user_id to tables that may exist without it
   try { db.run('ALTER TABLE workouts ADD COLUMN user_id INTEGER REFERENCES users(id)'); } catch { /* already exists */ }
   try { db.run('ALTER TABLE saved_workouts ADD COLUMN user_id INTEGER REFERENCES users(id)'); } catch { /* already exists */ }
+
+  // Log all tables
+  const allTables = db.exec("SELECT name FROM sqlite_master WHERE type='table'");
+  console.log('All tables:', allTables.length > 0 ? allTables[0].values.map(r => r[0]).join(', ') : 'NONE');
 
   persist();
   return db;
