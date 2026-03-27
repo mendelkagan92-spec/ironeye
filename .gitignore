@@ -2,3 +2,5 @@
 node_modules
 server/dist
 client/dist
+*.db
+.DS_Store

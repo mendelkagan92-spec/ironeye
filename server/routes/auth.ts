@@ -22,6 +22,10 @@ function findUserByEmail(email: string): { id: number; email: string; password_h
 router.post('/signup', async (req: Request, res: Response) => {
   try {
     console.log('[signup] Request body keys:', Object.keys(req.body || {}));
+    if (!req.body) {
+      console.log('[signup] req.body is undefined — Content-Type header may be missing');
+      return res.status(400).json({ error: 'Request body is empty' });
+    }
     const { email, password } = req.body;
 
     if (!email || !password) {
