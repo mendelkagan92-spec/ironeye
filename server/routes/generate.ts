@@ -1,6 +1,7 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import Anthropic from '@anthropic-ai/sdk';
 import { getDb, persist } from '../db';
+import { AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
@@ -52,7 +53,7 @@ const SYSTEM_PROMPT = `You are an expert personal trainer. Generate a complete w
 Include 4-8 exercises appropriate for the duration and experience level. Use exact equipment specified.`;
 
 // POST /api/generate — generate a workout plan via Claude
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', async (req: AuthRequest, res: Response) => {
   try {
     const { goal, experience, equipment, duration, focus } = req.body;
 
@@ -97,11 +98,12 @@ Create a complete, well-balanced workout appropriate for the experience level an
   }
 });
 
-// GET /api/generate/saved — list all saved workouts
-router.get('/saved', (_req: Request, res: Response) => {
+// GET /api/generate/saved — list saved workouts for this user
+router.get('/saved', (req: AuthRequest, res: Response) => {
   try {
     const rows = query<{ id: number; name: string; created_at: string; workout_data: string }>(
-      'SELECT * FROM saved_workouts ORDER BY created_at DESC'
+      'SELECT * FROM saved_workouts WHERE user_id = ? ORDER BY created_at DESC',
+      [req.userId!]
     );
     return res.json(
       rows.map((r) => ({ ...r, workout_data: JSON.parse(r.workout_data) }))
@@ -112,16 +114,16 @@ router.get('/saved', (_req: Request, res: Response) => {
   }
 });
 
-// POST /api/generate/saved — save a generated workout
-router.post('/saved', (req: Request, res: Response) => {
+// POST /api/generate/saved — save a generated workout for this user
+router.post('/saved', (req: AuthRequest, res: Response) => {
   try {
     const { name, workout_data } = req.body;
     if (!name || !workout_data) {
       return res.status(400).json({ error: 'name and workout_data are required' });
     }
     const { lastId } = run(
-      "INSERT INTO saved_workouts (name, workout_data, created_at) VALUES (?, ?, datetime('now'))",
-      [name, JSON.stringify(workout_data)]
+      "INSERT INTO saved_workouts (user_id, name, workout_data, created_at) VALUES (?, ?, ?, datetime('now'))",
+      [req.userId!, name, JSON.stringify(workout_data)]
     );
     return res.json({ id: lastId });
   } catch (error) {
@@ -130,10 +132,10 @@ router.post('/saved', (req: Request, res: Response) => {
   }
 });
 
-// DELETE /api/generate/saved/:id — delete a saved workout
-router.delete('/saved/:id', (req: Request, res: Response) => {
+// DELETE /api/generate/saved/:id — delete a saved workout (must belong to user)
+router.delete('/saved/:id', (req: AuthRequest, res: Response) => {
   try {
-    const { changes } = run('DELETE FROM saved_workouts WHERE id = ?', [req.params.id]);
+    const { changes } = run('DELETE FROM saved_workouts WHERE id = ? AND user_id = ?', [req.params.id, req.userId!]);
     if (changes === 0) {
       return res.status(404).json({ error: 'Saved workout not found' });
     }

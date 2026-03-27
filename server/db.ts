@@ -16,7 +16,6 @@ export async function initDb(): Promise<Database> {
     db = new SQL.Database();
   }
 
-  // Create tables if they don't exist
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,6 +28,7 @@ export async function initDb(): Promise<Database> {
   db.run(`
     CREATE TABLE IF NOT EXISTS workouts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER REFERENCES users(id),
       started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       ended_at DATETIME,
       notes TEXT
@@ -56,11 +56,16 @@ export async function initDb(): Promise<Database> {
 
     CREATE TABLE IF NOT EXISTS saved_workouts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER REFERENCES users(id),
       name TEXT NOT NULL,
       workout_data TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  // Migrations: add user_id to tables that may exist without it
+  try { db.run('ALTER TABLE workouts ADD COLUMN user_id INTEGER REFERENCES users(id)'); } catch { /* already exists */ }
+  try { db.run('ALTER TABLE saved_workouts ADD COLUMN user_id INTEGER REFERENCES users(id)'); } catch { /* already exists */ }
 
   persist();
   return db;

@@ -23,6 +23,13 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
   const res = await fetch(`${BASE}${path}`, { headers, ...options });
 
+  if (res.status === 401) {
+    clearToken();
+    localStorage.removeItem('ironeye_user');
+    window.location.reload();
+    throw new Error('Session expired. Please log in again.');
+  }
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || `HTTP ${res.status}`);

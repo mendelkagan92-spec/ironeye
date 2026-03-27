@@ -93,11 +93,12 @@ interface Props {
 export default function ProfilePage({ user, onLogout }: Props) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getWorkouts()
       .then((workouts) => setStats(computeStats(workouts)))
-      .catch(console.error)
+      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load stats'))
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -117,7 +118,37 @@ export default function ProfilePage({ user, onLogout }: Props) {
     );
   }
 
-  const s = stats!;
+  if (error || !stats) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+              <span className="font-barlow text-2xl font-black text-amber-500">
+                {user.email[0].toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <h1 className="font-barlow text-3xl font-black text-text-primary">My Stats</h1>
+              <p className="text-text-muted text-sm">{user.email}</p>
+            </div>
+          </div>
+          <button
+            onClick={onLogout}
+            className="text-text-muted text-sm hover:text-red-400 transition-colors px-3 py-1.5 rounded-lg border border-surface-3 hover:border-red-400/30"
+          >
+            Log out
+          </button>
+        </div>
+        <div className="text-center py-8 text-text-muted">
+          <p className="font-barlow text-xl">No data yet</p>
+          <p className="text-sm mt-1">Complete your first workout to see stats</p>
+        </div>
+      </div>
+    );
+  }
+
+  const s = stats;
 
   return (
     <div className="space-y-6">

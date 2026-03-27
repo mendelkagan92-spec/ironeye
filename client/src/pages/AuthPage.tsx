@@ -3,7 +3,7 @@ import { login, signup, setToken } from '../api';
 import type { User } from '../types';
 
 interface Props {
-  onAuth: (user: User, token: string) => void;
+  onAuth: (user: User) => void;
 }
 
 export default function AuthPage({ onAuth }: Props) {
@@ -22,7 +22,7 @@ export default function AuthPage({ onAuth }: Props) {
         ? await login(email, password)
         : await signup(email, password);
       setToken(res.token);
-      onAuth(res.user, res.token);
+      onAuth(res.user);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {

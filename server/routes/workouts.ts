@@ -1,18 +1,17 @@
-import { Router, Request, Response } from 'express';
+import { Response } from 'express';
 import { getDb, persist } from '../db';
+import { AuthRequest } from '../middleware/auth';
+import { Router } from 'express';
 
 const router = Router();
 
-// Helper: run a query and return rows as objects
 function query<T = Record<string, unknown>>(sql: string, params: (string | number | null | undefined)[] = []): T[] {
   const db = getDb();
-  // sql.js uses ? placeholders like better-sqlite3 but with exec for SELECT
   const stmt = db.prepare(sql);
   stmt.bind(params as any[]);
   const rows: T[] = [];
   while (stmt.step()) {
-    const row = stmt.getAsObject() as T;
-    rows.push(row);
+    rows.push(stmt.getAsObject() as T);
   }
   stmt.free();
   return rows;
@@ -28,12 +27,12 @@ function run(sql: string, params: (string | number | null | undefined)[] = []): 
 }
 
 // POST /api/workouts — start new workout
-router.post('/', (req: Request, res: Response) => {
+router.post('/', (req: AuthRequest, res: Response) => {
   try {
     const { notes } = req.body;
     const { lastId } = run(
-      "INSERT INTO workouts (started_at, notes) VALUES (datetime('now'), ?)",
-      [notes || null]
+      "INSERT INTO workouts (user_id, started_at, notes) VALUES (?, datetime('now'), ?)",
+      [req.userId!, notes || null]
     );
     res.json({ workoutId: lastId });
   } catch (error) {
@@ -42,15 +41,15 @@ router.post('/', (req: Request, res: Response) => {
   }
 });
 
-// GET /api/workouts — all workouts with exercises + sets
-router.get('/', (req: Request, res: Response) => {
+// GET /api/workouts — all workouts for this user with exercises + sets
+router.get('/', (req: AuthRequest, res: Response) => {
   try {
     const workouts = query<{
       id: number;
       started_at: string;
       ended_at: string | null;
       notes: string | null;
-    }>('SELECT * FROM workouts ORDER BY started_at DESC');
+    }>('SELECT * FROM workouts WHERE user_id = ? ORDER BY started_at DESC', [req.userId!]);
 
     const result = workouts.map((workout) => {
       const exercises = query<{
@@ -96,15 +95,15 @@ router.get('/', (req: Request, res: Response) => {
   }
 });
 
-// GET /api/workouts/:id — single workout
-router.get('/:id', (req: Request, res: Response) => {
+// GET /api/workouts/:id — single workout (must belong to user)
+router.get('/:id', (req: AuthRequest, res: Response) => {
   try {
     const workouts = query<{
       id: number;
       started_at: string;
       ended_at: string | null;
       notes: string | null;
-    }>('SELECT * FROM workouts WHERE id = ?', [req.params.id]);
+    }>('SELECT * FROM workouts WHERE id = ? AND user_id = ?', [req.params.id, req.userId!]);
 
     if (workouts.length === 0) {
       return res.status(404).json({ error: 'Workout not found' });
@@ -136,12 +135,12 @@ router.get('/:id', (req: Request, res: Response) => {
   }
 });
 
-// PATCH /api/workouts/:id/end — end a workout
-router.patch('/:id/end', (req: Request, res: Response) => {
+// PATCH /api/workouts/:id/end — end a workout (must belong to user)
+router.patch('/:id/end', (req: AuthRequest, res: Response) => {
   try {
     const { changes } = run(
-      "UPDATE workouts SET ended_at = datetime('now') WHERE id = ? AND ended_at IS NULL",
-      [req.params.id]
+      "UPDATE workouts SET ended_at = datetime('now') WHERE id = ? AND user_id = ? AND ended_at IS NULL",
+      [req.params.id, req.userId!]
     );
 
     if (changes === 0) {
@@ -156,12 +155,18 @@ router.patch('/:id/end', (req: Request, res: Response) => {
 });
 
 // POST /api/workouts/:workoutId/exercises — add exercise
-router.post('/:workoutId/exercises', (req: Request, res: Response) => {
+router.post('/:workoutId/exercises', (req: AuthRequest, res: Response) => {
   try {
     const { machine_name, muscles, image_data, position } = req.body;
 
     if (!machine_name) {
       return res.status(400).json({ error: 'machine_name is required' });
+    }
+
+    // Verify workout belongs to user
+    const workouts = query('SELECT id FROM workouts WHERE id = ? AND user_id = ?', [req.params.workoutId, req.userId!]);
+    if (workouts.length === 0) {
+      return res.status(404).json({ error: 'Workout not found' });
     }
 
     const musclesJson = Array.isArray(muscles) ? JSON.stringify(muscles) : muscles || null;
@@ -178,7 +183,7 @@ router.post('/:workoutId/exercises', (req: Request, res: Response) => {
 });
 
 // POST /api/workouts/exercises/:exerciseId/sets — log a set
-router.post('/exercises/:exerciseId/sets', (req: Request, res: Response) => {
+router.post('/exercises/:exerciseId/sets', (req: AuthRequest, res: Response) => {
   try {
     const { set_number, weight, weight_unit, reps, rpe } = req.body;
 
