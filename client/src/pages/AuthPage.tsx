@@ -34,63 +34,63 @@ export default function AuthPage({ onAuth }: Props) {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
-        <div className="text-center space-y-2">
-          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto">
-            <span className="font-barlow font-black text-amber-500 text-2xl">IE</span>
-          </div>
-          <h1 className="font-barlow text-4xl font-black text-text-primary">IronEye</h1>
-          <p className="text-text-muted text-sm">AI-powered gym companion</p>
+        <div className="text-center space-y-3">
+          <h1 className="font-barlow text-5xl font-extrabold text-white tracking-tight">
+            IronEye
+          </h1>
+          <p className="text-text-secondary text-sm font-inter">AI-powered gym companion</p>
         </div>
 
-        {/* Form */}
-        <div className="card space-y-5">
-          <h2 className="font-barlow text-2xl font-bold text-text-primary">
+        {/* Form Card */}
+        <div className="card space-y-6">
+          <h2 className="font-barlow text-xl font-semibold text-white">
             {mode === 'login' ? 'Welcome back' : 'Create account'}
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-text-muted text-xs font-dm uppercase tracking-wider">Email</label>
+            <div className="space-y-1.5">
+              <label className="label">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="w-full bg-surface-2 border border-surface-3 rounded-xl px-4 py-3 text-text-primary placeholder-text-muted focus:outline-none focus:border-amber-500/50 text-sm"
+                className="input-field"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-text-muted text-xs font-dm uppercase tracking-wider">Password</label>
+            <div className="space-y-1.5">
+              <label className="label">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={mode === 'signup' ? 'At least 6 characters' : '••••••••'}
                 required
-                className="w-full bg-surface-2 border border-surface-3 rounded-xl px-4 py-3 text-text-primary placeholder-text-muted focus:outline-none focus:border-amber-500/50 text-sm"
+                className="input-field"
               />
             </div>
 
             {error && (
-              <p className="text-red-400 text-sm">{error}</p>
+              <p className="text-red-500 text-sm font-inter">{error}</p>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-barlow font-bold text-lg py-3 rounded-xl transition-colors"
+              className="btn-primary w-full"
             >
-              {loading ? 'Please wait…' : mode === 'login' ? 'Log In' : 'Sign Up'}
+              {loading ? 'Please wait...' : mode === 'login' ? 'Log In' : 'Sign Up'}
             </button>
           </form>
 
-          <p className="text-center text-text-muted text-sm">
+          <p className="text-center text-text-secondary text-sm font-inter">
             {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
             <button
               onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
-              className="text-amber-500 font-medium hover:underline"
+              className="font-medium transition-colors duration-150"
+              style={{ color: '#fc4c02' }}
             >
               {mode === 'login' ? 'Sign up' : 'Log in'}
             </button>

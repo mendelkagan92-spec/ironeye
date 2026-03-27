@@ -7,10 +7,10 @@ interface MachineResultProps {
   imagePreview?: string;
 }
 
-const DIFFICULTY_COLORS = {
-  beginner: 'text-green-400 bg-green-400/10 border-green-400/30',
-  intermediate: 'text-amber-400 bg-amber-400/10 border-amber-400/30',
-  advanced: 'text-red-400 bg-red-400/10 border-red-400/30',
+const DIFFICULTY_COLORS: Record<string, { dot: string; text: string }> = {
+  beginner: { dot: '#00d4aa', text: '#00d4aa' },
+  intermediate: { dot: '#fc4c02', text: '#fc4c02' },
+  advanced: { dot: '#ef4444', text: '#ef4444' },
 };
 
 function SkeletonCard() {
@@ -26,16 +26,10 @@ function SkeletonCard() {
       <div className="flex gap-2">
         <div className="skeleton h-6 w-20 rounded-full" />
         <div className="skeleton h-6 w-24 rounded-full" />
-        <div className="skeleton h-6 w-16 rounded-full" />
       </div>
       <div className="space-y-2">
         <div className="skeleton h-4 w-full rounded" />
         <div className="skeleton h-4 w-5/6 rounded" />
-        <div className="skeleton h-4 w-4/6 rounded" />
-      </div>
-      <div className="flex items-center gap-3 pt-2">
-        <div className="skeleton h-8 w-24 rounded-lg" />
-        <div className="skeleton h-4 w-32 rounded" />
       </div>
     </div>
   );
@@ -45,9 +39,10 @@ export default function MachineResult({ machine, isLoading, imagePreview }: Mach
   if (isLoading) {
     return (
       <div className="space-y-3">
-        <div className="flex items-center gap-2 text-amber-500">
-          <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-          <span className="font-barlow text-sm uppercase tracking-wider">Analyzing equipment...</span>
+        <div className="flex items-center gap-2" style={{ color: '#fc4c02' }}>
+          <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: '#fc4c02', borderTopColor: 'transparent' }} />
+          <span className="label" style={{ color: '#fc4c02' }}>Analyzing equipment...</span>
         </div>
         <SkeletonCard />
       </div>
@@ -58,18 +53,18 @@ export default function MachineResult({ machine, isLoading, imagePreview }: Mach
 
   if (machine.error) {
     return (
-      <div className="card border-red-500/20 bg-red-500/5 animate-fade-in">
+      <div className="card animate-fade-in" style={{ borderColor: 'rgba(239,68,68,0.2)' }}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(239,68,68,0.1)' }}>
+            <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
           <div>
-            <p className="text-red-400 font-barlow text-lg">{machine.error}</p>
-            <p className="text-text-muted text-sm">Try taking a clearer photo or use manual entry</p>
+            <p className="text-red-500 font-barlow text-lg">{machine.error}</p>
+            <p className="text-text-muted text-sm font-inter">Try a clearer photo or manual entry</p>
           </div>
         </div>
       </div>
@@ -77,56 +72,50 @@ export default function MachineResult({ machine, isLoading, imagePreview }: Mach
   }
 
   const difficulty = machine.difficulty || 'beginner';
-  const difficultyClass = DIFFICULTY_COLORS[difficulty] || DIFFICULTY_COLORS.beginner;
+  const dc = DIFFICULTY_COLORS[difficulty] || DIFFICULTY_COLORS.beginner;
 
   return (
     <div className="card animate-slide-up space-y-4">
-      {/* Header */}
       <div className="flex items-start gap-3">
         {imagePreview && (
-          <img
-            src={imagePreview}
-            alt="Captured equipment"
-            className="w-14 h-14 rounded-lg object-cover flex-shrink-0 border border-surface-3"
-          />
+          <img src={imagePreview} alt="Captured equipment"
+            className="w-14 h-14 object-cover flex-shrink-0"
+            style={{ borderRadius: 8, border: '1px solid #2a2a2a' }} />
         )}
         <div className="flex-1 min-w-0">
-          <h2 className="font-barlow text-2xl font-bold text-text-primary leading-tight">
+          <h2 className="font-barlow text-2xl font-bold text-white leading-tight">
             {machine.machine_name}
           </h2>
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span className={`text-xs font-dm px-2 py-0.5 rounded-full border ${difficultyClass}`}>
-              {difficulty}
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+            <span className="flex items-center gap-1.5 text-xs font-inter">
+              <span className="w-2 h-2 rounded-full" style={{ background: dc.dot }} />
+              <span style={{ color: dc.text }}>{difficulty}</span>
             </span>
-            <span className="text-text-muted text-xs">
+            <span className="text-text-muted text-xs font-inter">
               {machine.suggested_sets} sets · {machine.suggested_reps_min}–{machine.suggested_reps_max} reps
             </span>
           </div>
         </div>
       </div>
 
-      {/* Muscles */}
       {machine.muscles && machine.muscles.length > 0 && (
         <div>
-          <p className="text-text-muted text-xs font-barlow uppercase tracking-wider mb-2">Muscles</p>
+          <p className="label mb-2">Muscles</p>
           <div className="flex flex-wrap gap-1.5">
             {machine.muscles.map((muscle) => (
-              <span key={muscle} className="amber-tag">
-                {muscle}
-              </span>
+              <span key={muscle} className="accent-tag">{muscle}</span>
             ))}
           </div>
         </div>
       )}
 
-      {/* Form Tips */}
       {machine.form_tips && machine.form_tips.length > 0 && (
         <div>
-          <p className="text-text-muted text-xs font-barlow uppercase tracking-wider mb-2">Form Tips</p>
+          <p className="label mb-2">Form Tips</p>
           <ul className="space-y-1.5">
             {machine.form_tips.map((tip, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-text-secondary">
-                <span className="text-amber-500 mt-0.5 flex-shrink-0">›</span>
+              <li key={i} className="flex items-start gap-2 text-sm text-text-secondary font-inter">
+                <span style={{ color: '#fc4c02' }} className="mt-0.5 flex-shrink-0">›</span>
                 <span>{tip}</span>
               </li>
             ))}

@@ -10,8 +10,10 @@
 
   html,
   body {
-    @apply bg-background text-text-primary;
-    font-family: 'DM Sans', sans-serif;
+    background-color: #0f0f0f;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
     overscroll-behavior: none;
     height: 100%;
     overflow: hidden;
@@ -22,61 +24,120 @@
     overflow: hidden;
   }
 
-  h1,
-  h2,
-  h3,
-  h4 {
-    font-family: 'Barlow Condensed', sans-serif;
+  h1, h2, h3, h4 {
+    font-family: 'Barlow', sans-serif;
     font-weight: 700;
+    letter-spacing: -0.5px;
   }
 }
 
 @layer components {
+  /* ── Buttons ── */
   .btn-primary {
-    @apply bg-amber-500 text-background font-barlow font-bold uppercase tracking-wider
-           px-6 py-3 rounded-lg min-h-[48px] flex items-center justify-center gap-2
-           active:scale-95 transition-all duration-150 text-lg;
+    @apply text-white font-inter font-semibold uppercase
+           px-6 rounded-lg flex items-center justify-center gap-2
+           transition-all duration-150;
+    height: 52px;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    background-color: #fc4c02;
+  }
+  .btn-primary:hover {
+    background-color: #ff6b35;
+  }
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .btn-secondary {
-    @apply bg-surface-3 text-text-primary font-dm font-medium
-           px-5 py-3 rounded-lg min-h-[48px] flex items-center justify-center gap-2
-           active:scale-95 transition-all duration-150 border border-surface-3;
+    @apply text-white font-inter font-semibold uppercase
+           px-6 rounded-lg flex items-center justify-center gap-2
+           transition-all duration-150;
+    height: 52px;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    background: transparent;
+    border: 1px solid #2a2a2a;
+  }
+  .btn-secondary:active {
+    transform: scale(0.98);
   }
 
   .btn-ghost {
-    @apply text-text-secondary font-dm
-           px-4 py-3 rounded-lg min-h-[48px] flex items-center justify-center gap-2
-           active:scale-95 transition-all duration-150;
+    @apply text-white font-inter font-medium
+           px-4 rounded-lg flex items-center justify-center gap-2
+           transition-all duration-150;
+    height: 44px;
+    font-size: 14px;
+    background: #242424;
+    border: none;
+  }
+  .btn-ghost:active {
+    transform: scale(0.98);
   }
 
+  /* ── Cards ── */
   .card {
-    @apply bg-surface rounded-xl border border-surface-3 p-4;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 16px;
   }
 
+  /* ── Inputs ── */
   .input-field {
-    @apply bg-surface-2 border border-surface-3 rounded-lg px-4 py-3
-           text-text-primary placeholder-text-muted focus:outline-none
-           focus:border-amber-500 transition-colors min-h-[48px] w-full;
+    background: #1e1e1e;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    height: 52px;
+    padding: 0 16px;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .input-field::placeholder {
+    color: #4a4a4a;
+  }
+  .input-field:focus {
+    border-color: #fc4c02;
   }
 
+  /* ── Tags ── */
+  .tag {
+    @apply text-xs font-inter font-medium px-2 py-1 rounded-full;
+    background: #242424;
+    color: #8a8a8a;
+  }
+
+  .accent-tag {
+    @apply text-xs font-inter font-medium px-2 py-1 rounded-full;
+    background: rgba(252, 76, 2, 0.1);
+    color: #fc4c02;
+    border: 1px solid rgba(252, 76, 2, 0.2);
+  }
+
+  /* ── Labels ── */
+  .label {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 11px;
+    color: #8a8a8a;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ── Skeleton ── */
   .skeleton {
-    background: linear-gradient(
-      90deg,
-      #1e1e1e 25%,
-      #2a2a2a 50%,
-      #1e1e1e 75%
-    );
+    background: linear-gradient(90deg, #1a1a1a 25%, #242424 50%, #1a1a1a 75%);
     background-size: 200% 100%;
     animation: skeleton 1.5s ease-in-out infinite;
-  }
-
-  .tag {
-    @apply bg-surface-2 text-text-secondary text-xs font-dm px-2 py-1 rounded-full;
-  }
-
-  .amber-tag {
-    @apply bg-amber-500/20 text-amber-400 text-xs font-dm px-2 py-1 rounded-full border border-amber-500/30;
   }
 }
 
@@ -84,19 +145,9 @@
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-
   .safe-top {
     padding-top: env(safe-area-inset-top, 0px);
   }
-
-  .font-barlow {
-    font-family: 'Barlow Condensed', sans-serif;
-  }
-
-  .font-dm {
-    font-family: 'DM Sans', sans-serif;
-  }
-
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -106,12 +157,12 @@
   }
 }
 
-/* Crosshair animation */
+/* Crosshair animation for camera */
 .crosshair-corner {
   position: absolute;
   width: 24px;
   height: 24px;
-  border-color: #f59e0b;
+  border-color: #fc4c02;
   border-style: solid;
 }
 .crosshair-corner.tl { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 2px 0 0 0; }
@@ -119,7 +170,6 @@
 .crosshair-corner.bl { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 2px; }
 .crosshair-corner.br { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 2px 0; }
 
-/* Scan line animation */
 @keyframes scanLine {
   0% { top: 0; }
   100% { top: 100%; }
@@ -129,6 +179,6 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.8), transparent);
+  background: linear-gradient(90deg, transparent, rgba(252, 76, 2, 0.8), transparent);
   animation: scanLine 2s linear infinite;
 }

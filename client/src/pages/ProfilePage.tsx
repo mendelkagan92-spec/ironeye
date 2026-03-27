@@ -16,7 +16,6 @@ function computeStats(workouts: Workout[]): Stats {
   }
 
   const completed = workouts.filter((w) => w.ended_at);
-
   let totalSets = 0;
   let totalExercises = 0;
   const muscleCount: Record<string, number> = {};
@@ -42,7 +41,6 @@ function computeStats(workouts: Workout[]): Stats {
   }, 0);
 
   const topMuscle = Object.entries(muscleCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
-
   return { totalWorkouts: workouts.length, totalSets, totalExercises, totalDurationMin, topMuscle };
 }
 
@@ -81,32 +79,25 @@ export default function ProfilePage({ user, onLogout }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* User header + logout */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
-            <span className="font-barlow text-2xl font-black text-amber-500">{initial}</span>
-          </div>
-          <div>
-            <h1 className="font-barlow text-3xl font-black text-text-primary">Profile</h1>
-            <p className="text-text-muted text-sm">{user?.email || 'Unknown'}</p>
-          </div>
+      {/* User header */}
+      <div className="flex items-center gap-4">
+        <div className="w-14 h-14 rounded-full flex items-center justify-center"
+          style={{ background: '#242424', border: '2px solid #2a2a2a' }}>
+          <span className="font-barlow text-2xl font-bold text-white">{initial}</span>
         </div>
-        <button
-          onClick={onLogout}
-          className="text-text-muted text-sm hover:text-red-400 transition-colors px-3 py-1.5 rounded-lg border border-surface-3 hover:border-red-400/30"
-        >
-          Log out
-        </button>
+        <div className="flex-1 min-w-0">
+          <h2 className="font-barlow text-xl font-bold text-white">{user?.email || 'Unknown'}</h2>
+          <p className="text-text-secondary text-sm font-inter">Member</p>
+        </div>
       </div>
 
       {/* Loading skeleton */}
       {isLoading && (
-        <div className="grid grid-cols-2 gap-3">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="card py-5">
-              <div className="skeleton h-10 w-16 mx-auto rounded mb-2" />
-              <div className="skeleton h-4 w-20 mx-auto rounded" />
+        <div className="flex gap-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="card flex-1 py-5">
+              <div className="skeleton h-8 w-12 mx-auto rounded mb-2" />
+              <div className="skeleton h-3 w-16 mx-auto rounded" />
             </div>
           ))}
         </div>
@@ -115,40 +106,51 @@ export default function ProfilePage({ user, onLogout }: Props) {
       {/* Stats */}
       {!isLoading && stats && (
         <>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="card flex flex-col items-center justify-center text-center py-5 gap-1">
-              <span className="font-barlow text-4xl font-black text-amber-500">{stats.totalWorkouts}</span>
-              <span className="text-text-muted text-xs font-dm">Workouts</span>
-            </div>
-            <div className="card flex flex-col items-center justify-center text-center py-5 gap-1">
-              <span className="font-barlow text-4xl font-black text-amber-500">{stats.totalSets}</span>
-              <span className="text-text-muted text-xs font-dm">Total Sets</span>
-            </div>
-            <div className="card flex flex-col items-center justify-center text-center py-5 gap-1">
-              <span className="font-barlow text-4xl font-black text-amber-500">{stats.totalExercises}</span>
-              <span className="text-text-muted text-xs font-dm">Exercises</span>
-            </div>
-            <div className="card flex flex-col items-center justify-center text-center py-5 gap-1">
-              <span className="font-barlow text-4xl font-black text-text-primary">{formatDuration(stats.totalDurationMin)}</span>
-              <span className="text-text-muted text-xs font-dm">Total Time</span>
-            </div>
+          <div className="flex gap-3">
+            {[
+              { value: stats.totalWorkouts, label: 'Workouts' },
+              { value: stats.totalSets, label: 'Total Sets' },
+              { value: stats.topMuscle || '—', label: 'Fav Muscle' },
+            ].map((s) => (
+              <div key={s.label} className="card flex-1 text-center py-5 space-y-1">
+                <div className="font-barlow font-bold text-white" style={{ fontSize: 32 }}>
+                  {s.value}
+                </div>
+                <div className="label">{s.label}</div>
+              </div>
+            ))}
           </div>
 
-          {stats.topMuscle && (
-            <div className="card py-5 text-center space-y-1">
-              <span className="text-text-muted text-xs font-dm uppercase tracking-wider">Most Trained Muscle</span>
-              <p className="font-barlow text-2xl font-black text-amber-500">{stats.topMuscle}</p>
-            </div>
-          )}
-
           {stats.totalWorkouts === 0 && (
-            <div className="text-center py-8 text-text-muted">
-              <p className="font-barlow text-xl">No data yet</p>
-              <p className="text-sm mt-1">Complete your first workout to see stats</p>
+            <div className="text-center py-8">
+              <p className="font-barlow text-lg font-semibold text-white">No data yet</p>
+              <p className="text-text-secondary text-sm font-inter mt-1">Complete your first workout to see stats</p>
             </div>
           )}
         </>
       )}
+
+      {/* Settings list */}
+      <div className="space-y-0">
+        {['Notifications', 'Units & Preferences', 'Data Export'].map((item) => (
+          <button key={item} className="w-full flex items-center justify-between py-4 transition-colors duration-150"
+            style={{ borderBottom: '1px solid #2a2a2a' }}>
+            <span className="text-white font-inter text-sm">{item}</span>
+            <svg className="w-4 h-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        ))}
+      </div>
+
+      {/* Logout */}
+      <button
+        onClick={onLogout}
+        className="btn-ghost w-full text-red-500 hover:text-red-400"
+        style={{ background: 'transparent' }}
+      >
+        Log Out
+      </button>
     </div>
   );
 }
