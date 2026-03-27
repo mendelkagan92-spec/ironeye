@@ -42,10 +42,6 @@ router.post('/', async (req: Request, res: Response) => {
       response = await client.messages.create({
         model: 'claude-opus-4-5',
         max_tokens: 16000,
-        thinking: {
-          type: 'enabled',
-          budget_tokens: 10000,
-        },
         system: SYSTEM_PROMPT,
         messages: [
           {
@@ -72,10 +68,6 @@ router.post('/', async (req: Request, res: Response) => {
       response = await client.messages.create({
         model: 'claude-opus-4-5',
         max_tokens: 16000,
-        thinking: {
-          type: 'enabled',
-          budget_tokens: 10000,
-        },
         system: SYSTEM_PROMPT,
         messages: [
           {
