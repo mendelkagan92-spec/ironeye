@@ -146,4 +146,141 @@ router.delete('/saved/:id', (req: AuthRequest, res: Response) => {
   }
 });
 
+// ─── Running Workout Generation ────────────────────────────────────────────
+
+const RUNNING_SYSTEM_PROMPT = `You are an expert running coach. Generate a structured running workout based on the user's inputs. Respond ONLY with valid JSON in this exact format:
+{
+  "workout_name": "Tempo Tuesday",
+  "total_duration_minutes": 45,
+  "description": "A classic tempo run to build lactate threshold",
+  "steps": [
+    {
+      "order": 1,
+      "type": "warmup",
+      "name": "Easy Warmup",
+      "duration_minutes": 10,
+      "intensity": "easy",
+      "pace_description": "Conversational pace, very comfortable",
+      "heart_rate_zone": 1,
+      "notes": "Keep it very easy, loosen up your legs"
+    },
+    {
+      "order": 2,
+      "type": "active",
+      "name": "Tempo Effort",
+      "duration_minutes": 25,
+      "intensity": "threshold",
+      "pace_description": "Comfortably hard, can speak only a few words",
+      "heart_rate_zone": 4,
+      "notes": "Maintain steady effort throughout"
+    },
+    {
+      "order": 3,
+      "type": "cooldown",
+      "name": "Easy Cooldown",
+      "duration_minutes": 10,
+      "intensity": "easy",
+      "pace_description": "Very easy jog or walk",
+      "heart_rate_zone": 1,
+      "notes": "Let your heart rate come down gradually"
+    }
+  ],
+  "coaching_tips": "Focus on maintaining consistent effort rather than pace during the tempo portion."
+}
+Step types must be "warmup", "active", or "cooldown". Intensity must be "easy", "moderate", "threshold", or "hard". Heart rate zones 1-5. Always include a warmup and cooldown.`;
+
+// POST /api/generate/running — generate a running workout via Claude
+router.post('/running', async (req: AuthRequest, res: Response) => {
+  try {
+    const { goal_race, workout_type, fitness_level, target_duration, current_pace } = req.body;
+
+    if (!goal_race || !workout_type || !fitness_level || !target_duration) {
+      return res.status(400).json({ error: 'goal_race, workout_type, fitness_level, and target_duration are required' });
+    }
+
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+    const userPrompt = `Generate a running workout with these parameters:
+- Goal Race: ${goal_race}
+- Workout Type: ${workout_type}
+- Fitness Level: ${fitness_level}
+- Target Duration: ${target_duration}
+${current_pace ? `- Current Pace: ${current_pace}` : ''}
+
+Create a well-structured running workout with appropriate warmup, main effort, and cooldown phases.`;
+
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4000,
+      system: RUNNING_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userPrompt }],
+    });
+
+    const textContent = response.content.find((b) => b.type === 'text');
+    if (!textContent || textContent.type !== 'text') {
+      return res.status(500).json({ error: 'No response from AI' });
+    }
+
+    const jsonMatch = textContent.text.trim().match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return res.status(500).json({ error: 'Invalid JSON response from AI' });
+    }
+
+    return res.json(JSON.parse(jsonMatch[0]));
+  } catch (error) {
+    console.error('Generate running workout error:', error);
+    return res
+      .status(500)
+      .json({ error: error instanceof Error ? error.message : 'Failed to generate running workout' });
+  }
+});
+
+// GET /api/generate/running/saved — list saved running workouts
+router.get('/running/saved', (req: AuthRequest, res: Response) => {
+  try {
+    const rows = query<{ id: number; name: string; created_at: string; workout_data: string }>(
+      'SELECT * FROM saved_running_workouts WHERE user_id = ? ORDER BY created_at DESC',
+      [req.userId!]
+    );
+    return res.json(
+      rows.map((r) => ({ ...r, workout_data: JSON.parse(r.workout_data) }))
+    );
+  } catch (error) {
+    console.error('Get saved running workouts error:', error);
+    return res.status(500).json({ error: 'Failed to get saved running workouts' });
+  }
+});
+
+// POST /api/generate/running/saved — save a running workout
+router.post('/running/saved', (req: AuthRequest, res: Response) => {
+  try {
+    const { name, workout_data } = req.body;
+    if (!name || !workout_data) {
+      return res.status(400).json({ error: 'name and workout_data are required' });
+    }
+    const { lastId } = run(
+      "INSERT INTO saved_running_workouts (user_id, name, workout_data, created_at) VALUES (?, ?, ?, datetime('now'))",
+      [req.userId!, name, JSON.stringify(workout_data)]
+    );
+    return res.json({ id: lastId });
+  } catch (error) {
+    console.error('Save running workout error:', error);
+    return res.status(500).json({ error: 'Failed to save running workout' });
+  }
+});
+
+// DELETE /api/generate/running/saved/:id — delete a saved running workout
+router.delete('/running/saved/:id', (req: AuthRequest, res: Response) => {
+  try {
+    const { changes } = run('DELETE FROM saved_running_workouts WHERE id = ? AND user_id = ?', [req.params.id, req.userId!]);
+    if (changes === 0) {
+      return res.status(404).json({ error: 'Saved running workout not found' });
+    }
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Delete saved running workout error:', error);
+    return res.status(500).json({ error: 'Failed to delete running workout' });
+  }
+});
+
 export default router;

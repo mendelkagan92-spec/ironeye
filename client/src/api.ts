@@ -1,4 +1,4 @@
-import type { MachineInfo, Workout, GeneratedWorkout, SavedWorkout, WorkoutGenerationParams, AuthResponse } from './types';
+import type { MachineInfo, Workout, GeneratedWorkout, SavedWorkout, WorkoutGenerationParams, AuthResponse, RunningWorkout, SavedRunningWorkout, RunningGenerationParams } from './types';
 
 const BASE = '/api';
 
@@ -121,6 +121,29 @@ export async function saveWorkout(name: string, workout_data: GeneratedWorkout):
 
 export async function deleteSavedWorkout(id: number): Promise<void> {
   return request<void>(`/generate/saved/${id}`, { method: 'DELETE' });
+}
+
+// Running Workout Generator
+export async function generateRunningWorkout(params: RunningGenerationParams): Promise<RunningWorkout> {
+  return request<RunningWorkout>('/generate/running', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+}
+
+export async function getSavedRunningWorkouts(): Promise<SavedRunningWorkout[]> {
+  return request<SavedRunningWorkout[]>('/generate/running/saved');
+}
+
+export async function saveRunningWorkout(name: string, workout_data: RunningWorkout): Promise<{ id: number }> {
+  return request<{ id: number }>('/generate/running/saved', {
+    method: 'POST',
+    body: JSON.stringify({ name, workout_data }),
+  });
+}
+
+export async function deleteSavedRunningWorkout(id: number): Promise<void> {
+  return request<void>(`/generate/running/saved/${id}`, { method: 'DELETE' });
 }
 
 // Set

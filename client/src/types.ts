@@ -56,7 +56,42 @@ export interface PendingSet {
 }
 
 export type WeightUnit = 'kg' | 'lbs';
-export type TabName = 'workout' | 'generate' | 'history' | 'profile';
+export type TabName = 'workout' | 'generate' | 'running' | 'history' | 'profile';
+
+// Running Workout types
+export interface RunningStep {
+  order: number;
+  type: 'warmup' | 'active' | 'cooldown';
+  name: string;
+  duration_minutes: number;
+  intensity: 'easy' | 'moderate' | 'threshold' | 'hard';
+  pace_description: string;
+  heart_rate_zone: number;
+  notes: string;
+}
+
+export interface RunningWorkout {
+  workout_name: string;
+  total_duration_minutes: number;
+  description: string;
+  steps: RunningStep[];
+  coaching_tips: string;
+}
+
+export interface SavedRunningWorkout {
+  id: number;
+  name: string;
+  created_at: string;
+  workout_data: RunningWorkout;
+}
+
+export interface RunningGenerationParams {
+  goal_race: string;
+  workout_type: string;
+  fitness_level: string;
+  target_duration: string;
+  current_pace?: string;
+}
 
 // AI Workout Generator types
 export interface GeneratedExercise {

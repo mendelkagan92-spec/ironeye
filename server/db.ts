@@ -65,6 +65,14 @@ export async function initDb(): Promise<Database> {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS saved_running_workouts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id),
+    name TEXT NOT NULL,
+    workout_data TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
   // Migrations: add user_id to tables that may exist without it
   try { db.run('ALTER TABLE workouts ADD COLUMN user_id INTEGER REFERENCES users(id)'); } catch { /* already exists */ }
   try { db.run('ALTER TABLE saved_workouts ADD COLUMN user_id INTEGER REFERENCES users(id)'); } catch { /* already exists */ }

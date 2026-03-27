@@ -4,6 +4,7 @@ import WorkoutPage from './pages/WorkoutPage';
 import HistoryPage from './pages/HistoryPage';
 import ProfilePage from './pages/ProfilePage';
 import GeneratePage from './pages/GeneratePage';
+import RunningPage from './pages/RunningPage';
 import AuthPage from './pages/AuthPage';
 import { getToken, clearToken } from './api';
 import type { TabName, GeneratedWorkout, User } from './types';
@@ -78,6 +79,7 @@ export default function App() {
           {activeTab === 'generate' && (
             <GeneratePage onStartWorkout={handleStartGeneratedWorkout} />
           )}
+          {activeTab === 'running' && <RunningPage />}
           {activeTab === 'history' && (
             <HistoryPage onStartSavedWorkout={(w) => { setPendingGeneratedWorkout(w); setActiveTab('workout'); }} />
           )}

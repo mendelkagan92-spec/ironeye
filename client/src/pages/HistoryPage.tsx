@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import History from '../components/History';
-import { getWorkouts, getSavedWorkouts, deleteSavedWorkout } from '../api';
-import type { Workout, SavedWorkout, GeneratedWorkout } from '../types';
+import { getWorkouts, getSavedWorkouts, deleteSavedWorkout, getSavedRunningWorkouts, deleteSavedRunningWorkout } from '../api';
+import { downloadFitFile } from '../utils/fitWriter';
+import type { Workout, SavedWorkout, SavedRunningWorkout, GeneratedWorkout, RunningWorkout } from '../types';
 
-type HistoryTab = 'logs' | 'saved';
+type HistoryTab = 'logs' | 'saved' | 'runs';
 
 interface SavedWorkoutCardProps {
   saved: SavedWorkout;
@@ -116,6 +117,105 @@ function SavedWorkoutCard({ saved, onDelete, onStart }: SavedWorkoutCardProps) {
   );
 }
 
+interface SavedRunCardProps {
+  saved: SavedRunningWorkout;
+  onDelete: (id: number) => void;
+}
+
+function SavedRunCard({ saved, onDelete }: SavedRunCardProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const w = saved.workout_data;
+
+  const handleDelete = async () => {
+    if (!window.confirm('Delete this saved running workout?')) return;
+    setDeleting(true);
+    try {
+      await deleteSavedRunningWorkout(saved.id);
+      onDelete(saved.id);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const date = new Date(saved.created_at).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+  });
+
+  const intensityColors: Record<string, string> = {
+    easy: 'text-blue-400', moderate: 'text-green-400', threshold: 'text-orange-400', hard: 'text-red-400',
+  };
+
+  return (
+    <div className="card border border-surface-3 space-y-3">
+      <div className="flex items-start gap-3">
+        <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+          <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round"
+              d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"
+            />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-barlow font-bold text-text-primary leading-tight">{saved.name}</h3>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-text-muted text-xs font-dm">{date}</span>
+            <span className="text-text-muted text-xs">&#8226;</span>
+            <span className="text-text-muted text-xs font-dm">{w.total_duration_minutes} min</span>
+            <span className="text-text-muted text-xs">&#8226;</span>
+            <span className="text-text-muted text-xs font-dm">{w.steps.length} steps</span>
+          </div>
+        </div>
+        <button
+          onClick={handleDelete} disabled={deleting}
+          className="text-text-muted hover:text-red-400 transition-colors p-1 flex-shrink-0"
+          aria-label="Delete"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <button type="button" className="w-full text-left" onClick={() => setExpanded((v) => !v)}>
+        <div className="flex items-center gap-2 text-text-muted text-xs font-dm">
+          <svg className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-90' : ''}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          {expanded ? 'Hide' : 'Show'} steps
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="space-y-1 border-t border-surface-3 pt-3">
+          {w.steps.map((s, i) => (
+            <div key={i} className="flex items-center gap-2 py-1">
+              <span className="w-4 h-4 rounded text-center text-xs font-barlow font-black text-amber-500 flex-shrink-0">{s.order}</span>
+              <span className="text-text-secondary text-sm font-dm flex-1">{s.name}</span>
+              <span className={`text-xs font-dm ${intensityColors[s.intensity] || 'text-text-muted'}`}>{s.duration_minutes}m</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <button
+        className="btn-primary w-full py-3"
+        onClick={() => downloadFitFile(w)}
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+          />
+        </svg>
+        Download FIT File
+      </button>
+    </div>
+  );
+}
+
 interface HistoryPageProps {
   onStartSavedWorkout?: (workout: GeneratedWorkout) => void;
 }
@@ -124,8 +224,10 @@ export default function HistoryPage({ onStartSavedWorkout }: HistoryPageProps) {
   const [activeTab, setActiveTab] = useState<HistoryTab>('logs');
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [savedWorkouts, setSavedWorkouts] = useState<SavedWorkout[]>([]);
+  const [savedRuns, setSavedRuns] = useState<SavedRunningWorkout[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(true);
   const [isLoadingSaved, setIsLoadingSaved] = useState(false);
+  const [isLoadingRuns, setIsLoadingRuns] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchWorkouts = async () => {
@@ -158,9 +260,24 @@ export default function HistoryPage({ onStartSavedWorkout }: HistoryPageProps) {
     fetchWorkouts();
   }, []);
 
+  const fetchRuns = async () => {
+    setIsLoadingRuns(true);
+    setError(null);
+    try {
+      const data = await getSavedRunningWorkouts();
+      setSavedRuns(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load saved runs');
+    } finally {
+      setIsLoadingRuns(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'saved') {
       fetchSaved();
+    } else if (activeTab === 'runs') {
+      fetchRuns();
     }
   }, [activeTab]);
 
@@ -170,12 +287,12 @@ export default function HistoryPage({ onStartSavedWorkout }: HistoryPageProps) {
       <div className="flex items-center justify-between">
         <h1 className="font-barlow text-3xl font-black text-text-primary">History</h1>
         <button
-          onClick={activeTab === 'logs' ? fetchWorkouts : fetchSaved}
+          onClick={activeTab === 'logs' ? fetchWorkouts : activeTab === 'saved' ? fetchSaved : fetchRuns}
           className="btn-ghost py-2 px-3 text-sm"
-          disabled={isLoadingLogs || isLoadingSaved}
+          disabled={isLoadingLogs || isLoadingSaved || isLoadingRuns}
         >
           <svg
-            className={`w-4 h-4 ${(isLoadingLogs || isLoadingSaved) ? 'animate-spin' : ''}`}
+            className={`w-4 h-4 ${(isLoadingLogs || isLoadingSaved || isLoadingRuns) ? 'animate-spin' : ''}`}
             fill="none" viewBox="0 0 24 24" stroke="currentColor"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -188,7 +305,7 @@ export default function HistoryPage({ onStartSavedWorkout }: HistoryPageProps) {
 
       {/* Tab switcher */}
       <div className="flex rounded-xl overflow-hidden border border-surface-3 p-1 bg-surface gap-1">
-        {(['logs', 'saved'] as HistoryTab[]).map((t) => (
+        {(['logs', 'saved', 'runs'] as HistoryTab[]).map((t) => (
           <button
             key={t}
             onClick={() => setActiveTab(t)}
@@ -198,7 +315,7 @@ export default function HistoryPage({ onStartSavedWorkout }: HistoryPageProps) {
                 : 'text-text-muted hover:text-text-secondary'
             }`}
           >
-            {t === 'logs' ? 'Workout Logs' : 'Saved Plans'}
+            {t === 'logs' ? 'Logs' : t === 'saved' ? 'Plans' : 'Runs'}
           </button>
         ))}
       </div>
@@ -208,7 +325,7 @@ export default function HistoryPage({ onStartSavedWorkout }: HistoryPageProps) {
           <p className="text-red-400 text-sm">{error}</p>
           <button
             className="text-amber-500 text-sm mt-2 underline"
-            onClick={activeTab === 'logs' ? fetchWorkouts : fetchSaved}
+            onClick={activeTab === 'logs' ? fetchWorkouts : activeTab === 'saved' ? fetchSaved : fetchRuns}
           >
             Try again
           </button>
@@ -257,6 +374,49 @@ export default function HistoryPage({ onStartSavedWorkout }: HistoryPageProps) {
                 saved={sw}
                 onDelete={(id) => setSavedWorkouts((prev) => prev.filter((s) => s.id !== id))}
                 onStart={(w) => onStartSavedWorkout?.(w)}
+              />
+            ))
+          )}
+        </div>
+      )}
+
+      {activeTab === 'runs' && (
+        <div className="space-y-3">
+          {isLoadingRuns ? (
+            <div className="space-y-3">
+              {[1, 2].map((i) => (
+                <div key={i} className="card border border-surface-3 space-y-3">
+                  <div className="flex gap-3">
+                    <div className="skeleton w-9 h-9 rounded-lg" />
+                    <div className="flex-1 space-y-2">
+                      <div className="skeleton h-5 w-2/3 rounded" />
+                      <div className="skeleton h-3 w-1/2 rounded" />
+                    </div>
+                  </div>
+                  <div className="skeleton h-10 w-full rounded-lg" />
+                </div>
+              ))}
+            </div>
+          ) : savedRuns.length === 0 ? (
+            <div className="text-center py-12 space-y-3">
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-surface border border-surface-3 flex items-center justify-center">
+                <svg className="w-6 h-6 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"
+                  />
+                </svg>
+              </div>
+              <p className="font-barlow font-bold text-text-primary">No saved runs yet</p>
+              <p className="text-text-muted text-sm font-dm">
+                Generate a running workout and tap "Save Workout" to save it here.
+              </p>
+            </div>
+          ) : (
+            savedRuns.map((sr) => (
+              <SavedRunCard
+                key={sr.id}
+                saved={sr}
+                onDelete={(id) => setSavedRuns((prev) => prev.filter((s) => s.id !== id))}
               />
             ))
           )}
